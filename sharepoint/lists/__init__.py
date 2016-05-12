@@ -296,15 +296,23 @@ class SharePointList(object):
             if batch is None:
                 continue
             # Add the batch ID
-            batch.attrib['ID'] = unicode(batch_id)
+            try:
+                batch.attrib['ID'] = unicode(batch_id)
+            except NameError:
+                batch.attrib['ID'] = str(batch_id)
             rows_by_batch_id[batch_id] = row
             batches.append(batch)
             batch_id += 1
 
         for row in self._deleted_rows:
-            batch = E.Method(E.Field(unicode(row.id),
-                                     Name='ID'),
-                             ID=unicode(batch_id), Cmd='Delete')
+            try:
+                batch = E.Method(E.Field(unicode(row.id),
+                                         Name='ID'),
+                                 ID=unicode(batch_id), Cmd='Delete')
+            except NameError:
+                batch = E.Method(E.Field(str(row.id),
+                                         Name='ID'),
+                                 ID=str(batch_id), Cmd='Delete')
             rows_by_batch_id[batch_id] = row
             batches.append(batch)
             batch_id += 1
@@ -383,8 +391,12 @@ class SharePointListRow(object):
             return None
 
         batch_method = E.Method(Cmd='Update' if self.id else 'New')
-        batch_method.append(E.Field(unicode(self.id) if self.id else 'New',
-                                    Name='ID'))
+        try:
+            batch_method.append(E.Field(unicode(self.id) if self.id else 'New',
+                                        Name='ID'))
+        except NameError:
+            batch_method.append(E.Field(str(self.id) if self.id else 'New',
+                                        Name='ID'))
         for field in self.fields.values():
             if field.name in self._changed:
                 value = field.unparse(self._data[field.name] or '')
